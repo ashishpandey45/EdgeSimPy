@@ -5,6 +5,8 @@ from edge_sim_py.component_manager import ComponentManager
 # Mesa modules
 from mesa import Agent
 
+from EdgeSimPy.edge_sim_py.components import cloud_server
+
 
 class BaseStation(ComponentManager, Agent):
     """Class that represents a base station."""
@@ -37,10 +39,11 @@ class BaseStation(ComponentManager, Agent):
         # Base station wireless delay
         self.wireless_delay = None
 
-        # Lists of users, network switch, and edge servers connected to the base station
+        # Lists of users, network switch, edge servers and cloud server connected to the base station
         self.users = []
         self.network_switch = None
         self.edge_servers = []
+        self.cloud_server
 
         # Model-specific attributes (defined inside the model's "initialize()" method)
         self.model = None
@@ -63,6 +66,7 @@ class BaseStation(ComponentManager, Agent):
                 "edge_servers": [
                     {"class": type(edge_server).__name__, "id": edge_server.id} for edge_server in self.edge_servers
                 ],
+                "cloud_server": {"class": type(cloud_server).__name__, "id": cloud_server.id},
                 "network_switch": {"class": type(self.network_switch).__name__, "id": self.network_switch.id}
                 if self.network_switch
                 else None,
@@ -114,5 +118,23 @@ class BaseStation(ComponentManager, Agent):
         edge_server.coordinates = self.coordinates
         edge_server.network_switch = self.network_switch
         self.network_switch.edge_servers.append(edge_server)
+
+        return self
+    
+    def _connect_to_cloud_server(self, cloud_server: object) -> object:
+        """Creates a relationship between the base station and a given CloudServer object.
+
+        Args:
+            cloud_server (CloudServer): CloudServer object.
+
+        Returns:
+            object: Updated BaseStation object.
+        """
+        self.cloud_servers.append(cloud_server)
+        cloud_server.base_station = self
+
+        cloud_server.coordinates = self.coordinates
+        cloud_server.network_switch = self.network_switch
+        self.network_switch.edge_servers.append(cloud_server)
 
         return self

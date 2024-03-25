@@ -1,4 +1,4 @@
-""" Contains edge-server-related functionality."""
+""" Contains cloud-server-related functionality."""
 # EdgeSimPy components
 from edge_sim_py.component_manager import ComponentManager
 from edge_sim_py.components.network_flow import NetworkFlow
@@ -14,8 +14,8 @@ import networkx as nx
 import typing
 
 
-class EdgeServer(ComponentManager, Agent):
-    """Class that represents an edge server."""
+class CloudServer(ComponentManager, Agent):
+    """Class that represents a Cloud server."""
 
     # Class attributes that allow this class to use helper methods from the ComponentManager
     _instances = []
@@ -31,19 +31,19 @@ class EdgeServer(ComponentManager, Agent):
         disk: int = 0,
         power_model: typing.Callable = None,
     ) -> object:
-        """Creates an EdgeServer object.
+        """Creates a CloudServer object.
 
         Args:
             obj_id (int, optional): Object identifier.
-            coordinates (tuple, optional): 2-tuple that represents the edge server coordinates.
-            model_name (str, optional): Edge server model name. Defaults to "".
-            cpu (int, optional): Edge server's CPU capacity. Defaults to 0.
-            memory (int, optional): Edge server's memory capacity. Defaults to 0.
-            disk (int, optional): Edge server's disk capacity. Defaults to 0.
-            power_model (typing.Callable, optional): Edge server power model. Defaults to None.
+            coordinates (tuple, optional): 2-tuple that represents the cloud server coordinates.
+            model_name (str, optional): Cloud server model name. Defaults to "".
+            cpu (int, optional): Cloud server's CPU capacity. Defaults to 0.
+            memory (int, optional): Cloud server's memory capacity. Defaults to 0.
+            disk (int, optional): Cloud server's disk capacity. Defaults to 0.
+            power_model (typing.Callable, optional): Cloud server power model. Defaults to None.
 
         Returns:
-            object: Created EdgeServer object.
+            object: Created CloudServer object.
         """
         # Adding the new object to the list of instances of its class
         self.__class__._instances.append(self)
@@ -54,32 +54,32 @@ class EdgeServer(ComponentManager, Agent):
             obj_id = self.__class__._object_count
         self.id = obj_id
 
-        # Edge server model name
+        # Cloud server model name
         self.model_name = model_name
 
-        # Edge server base station
+        # Cloud server base station
         self.base_station = None
 
-        # Edge server network switch
+        # Cloud server network switch
         self.network_switch = None
 
-        # Edge server coordinates
+        # Cloud server coordinates
         self.coordinates = coordinates
 
-        # Edge server capacity
+        # Cloud server capacity
         self.cpu = cpu
         self.memory = memory
         self.disk = disk
 
-        # Edge server demand
+        # Cloud server demand
         self.cpu_demand = 0
         self.memory_demand = 0
         self.disk_demand = 0
 
-        # Edge server's availability status
+        # Cloud server's availability status
         self.available = True
 
-        # Number of active migrations involving the edge server
+        # Number of active migrations involving the Cloud server
         self.ongoing_migrations = 0
 
         # Power Features
@@ -87,19 +87,19 @@ class EdgeServer(ComponentManager, Agent):
         self.power_model = power_model
         self.power_model_parameters = {}
 
-        # Container registries and services hosted by the edge server
+        # Container registries and services hosted by the cloud server
         self.container_registries = []
         self.services = []
 
-        # Container images and container layers hosted by the edge server
+        # Container images and container layers hosted by the cloud server
         self.container_images = []
         self.container_layers = []
 
-        # Lists that control the layers being pulled to the edge server
+        # Lists that control the layers being pulled to the cloud server
         self.waiting_queue = []
         self.download_queue = []
 
-        # Number of container layers the edge server can download simultaneously (default = 3)
+        # Number of container layers the cloud server can download simultaneously (default = 3)
         self.max_concurrent_layer_downloads = 3
 
         # Model-specific attributes (defined inside the model's "initialize()" method)
@@ -129,6 +129,9 @@ class EdgeServer(ComponentManager, Agent):
                 "power_model_parameters": self.power_model_parameters,
             },
             "relationships": {
+                "edge_servers": [
+                    {"class": type(edge_server).__name__, "id": edge_server.id} for edge_server in self.edge_servers
+                ],
                 "power_model": self.power_model.__name__ if self.power_model else None,
                 "base_station": {"class": type(self.base_station).__name__, "id": self.base_station.id}
                 if self.base_station
@@ -191,7 +194,7 @@ class EdgeServer(ComponentManager, Agent):
 
                     registries_with_layer.append({"object": registry, "path": path})
 
-            # Selecting the registry from which the layer will be pulled to the (target) edge server
+            # Selecting the registry from which the layer will be pulled to the (target) cloud server
             registries_with_layer = sorted(registries_with_layer, key=lambda r: len(r["path"]))
             registry = registries_with_layer[0]["object"]
             path = registries_with_layer[0]["path"]
@@ -208,31 +211,31 @@ class EdgeServer(ComponentManager, Agent):
             )
             self.model.initialize_agent(agent=flow)
 
-            # Adding the created flow to the edge server's download queue
+            # Adding the created flow to the cloud server's download queue
             self.download_queue.append(flow)
 
     def get_power_consumption(self) -> float:
-        """Gets the edge server's power consumption.
+        """Gets the cloud server's power consumption.
 
         Returns:
-            power_consumption (float): Edge server's power consumption.
+            power_consumption (float): Cloud server's power consumption.
         """
         power_consumption = self.power_model.get_power_consumption(device=self) if self.power_model is not None else 0
         return power_consumption
 
     def has_capacity_to_host(self, service: object) -> bool:
-        """Checks if the edge server has enough free resources to host a given service.
+        """Checks if the cloud server has enough free resources to host a given service.
 
         Args:
-            service (object): Service object that we are trying to host on the edge server.
+            service (object): Service object that we are trying to host on the cloud server.
 
         Returns:
-            can_host (bool): Information of whether the edge server has capacity to host the service or not.
+            can_host (bool): Information of whether the cloud server has capacity to host the service or not.
         """
-        # Calculating the additional disk demand that would be incurred to the edge server
+        # Calculating the additional disk demand that would be incurred to the cloud server
         additional_disk_demand = self._get_disk_demand_delta(service=service)
 
-        # Calculating the edge server's free resources
+        # Calculating the cloud server's free resources
         free_cpu = self.cpu - self.cpu_demand
         free_memory = self.memory - self.memory_demand
         free_disk = self.disk - self.disk_demand
@@ -242,19 +245,19 @@ class EdgeServer(ComponentManager, Agent):
         return can_host
 
     def _add_container_image(self, template_container_image: object) -> object:
-        """Adds a new container image to the edge server based on the specifications of an existing image.
+        """Adds a new container image to the cloud server based on the specifications of an existing image.
         Args:
             template_container_image (object): Template container image.
 
         Returns:
             image (ContainerImage): New ContainerImage object.
         """
-        # Checking if the edge server has no existing instance representing the same container image
+        # Checking if the cloud server has no existing instance representing the same container image
         digest = template_container_image.digest
         if digest in [image.digest for image in self.container_images]:
             raise Exception(f"Failed in adding an image to {self} as it already hosts a image with the same digest ({digest}).")
 
-        # Checking if the edge server has all the container layers that compose the container image
+        # Checking if the cloud server has all the container layers that compose the container image
         for layer_digest in template_container_image.layers_digests:
             if not any([layer_digest == layer.digest for layer in self.container_layers]):
                 raise Exception(
@@ -279,13 +282,13 @@ class EdgeServer(ComponentManager, Agent):
         return image
 
     def _get_uncached_layers(self, service: object) -> list:
-        """Gets the list of container layers from a given service that are not present in the edge server's layers cache list.
+        """Gets the list of container layers from a given service that are not present in the cloud server's layers cache list.
 
         Args:
             service (object): Service whose disk demand delta will be calculated.
 
         Returns:
-            uncached_layers (float): List of layers from service's image not present in the edge server's layers cache list.
+            uncached_layers (float): List of layers from service's image not present in the cloud server's layers cache list.
         """
         # Gathering layers present in the target server (layers, download_queue, waiting_queue)
         layers_downloaded = [layer for layer in self.container_layers]
@@ -307,8 +310,8 @@ class EdgeServer(ComponentManager, Agent):
         return uncached_layers
 
     def _get_disk_demand_delta(self, service: object) -> float:
-        """Calculates the additional disk demand necessary to host a registry inside the edge server considering
-        the list of cached layers inside the edge server and the layers that compose the service's image.
+        """Calculates the additional disk demand necessary to host a registry inside the cloud server considering
+        the list of cached layers inside the cloud server and the layers that compose the service's image.
 
         Args:
             service (object): Service whose disk demand delta will be calculated.
@@ -316,7 +319,7 @@ class EdgeServer(ComponentManager, Agent):
         Returns:
             disk_demand_delta (float): Disk demand delta.
         """
-        # Gathering the list of layers that compose the service's image that are not present in the edge server
+        # Gathering the list of layers that compose the service's image that are not present in the cloud server
         uncached_layers = self._get_uncached_layers(service=service)
 
         # Calculating the amount of disk resources required by all service layers not present in the host's disk

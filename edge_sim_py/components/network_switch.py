@@ -43,6 +43,9 @@ class NetworkSwitch(ComponentManager, Agent):
         # List of edge servers connected to the switch
         self.edge_servers = []
 
+        #List of cloud servers connected to the switch
+        self.cloud_server = None
+
         # List of links connected to the switch ports
         self.links = []
 
@@ -73,6 +76,7 @@ class NetworkSwitch(ComponentManager, Agent):
                 "edge_servers": [
                     {"class": type(edge_server).__name__, "id": edge_server.id} for edge_server in self.edge_servers
                 ],
+                "cloud_server": {"class": type(self.cloud_server).__name__, "id": self.cloud_server.id},
                 "links": [{"class": type(link).__name__, "id": link.id} for link in self.links],
                 "base_station": {"class": type(self.base_station).__name__, "id": self.base_station.id}
                 if self.base_station

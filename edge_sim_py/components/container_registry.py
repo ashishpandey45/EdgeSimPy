@@ -140,7 +140,7 @@ class ContainerRegistry(ComponentManager, Agent):
         # The new container is set as unavailable until it is completely provisioned in the target server
         registry.available = False
 
-        # Creating relationship between the edge server and the new registry
+        # Creating relationship between the edge/cloud server and the new registry
         registry.server = target_server
         target_server.container_registries.append(registry)
 

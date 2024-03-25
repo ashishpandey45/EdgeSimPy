@@ -11,6 +11,9 @@ from mesa import Agent
 # Python libraries
 import networkx as nx
 
+from EdgeSimPy.edge_sim_py.components.network_switch import NetworkSwitch
+from EdgeSimPy.edge_sim_py.components.topology import Topology
+
 
 class Service(ComponentManager, Agent):
     """Class that represents a service."""
@@ -102,6 +105,7 @@ class Service(ComponentManager, Agent):
             "relationships": {
                 "application": {"class": type(self.application).__name__, "id": self.application.id},
                 "server": {"class": type(self.server).__name__, "id": self.server.id} if self.server else None,
+                "base_station": {"class": type(self.base_station).__name__, "id": self.base_station.id},
             },
         }
         return dictionary
@@ -311,3 +315,36 @@ class Service(ComponentManager, Agent):
                 "migrating_service_state_time": 0,
             }
         )
+
+        def _compute_delay(self, app: object, metric: str = "latency") -> int:
+            """Computes the delay of an application accessed by the user.
+
+            Args:
+                metric (str, optional): Delay measure (valid options: 'latency' and 'response time'). Defaults to 'latency'.
+                app (object): Application accessed by the user.
+
+            Returns:
+                delay (int): User-perceived delay when accessing application "app".
+            """
+            topology = Topology.first()
+
+            services_available = len([s for s in app.services if s._available])
+            if services_available < len(app.services):
+                # Defining the delay as infinity if any of the application services is not available
+                delay = float("inf")
+            else:
+                # Initializes the application's delay with the time it takes to communicate its client and his base station
+                9
+
+                # Adding the communication path delay to the application's delay
+                for path in self.communication_paths[str(app.id)]:
+                    delay += topology.calculate_path_delay(path=[NetworkSwitch.find_by_id(i) for i in path])
+
+                if metric.lower() == "response time":
+                    # We assume that Response Time = Latency * 2
+                    delay = delay * 2
+
+            # Updating application delay inside user's 'applications' attribute
+            self.delays[str(app.id)] = delay
+
+            return delay
