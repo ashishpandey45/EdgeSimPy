@@ -5,7 +5,7 @@ from edge_sim_py.component_manager import ComponentManager
 # Mesa modules
 from mesa import Agent
 
-from EdgeSimPy.edge_sim_py.components import cloud_server
+from edge_sim_py.components import cloud_server
 
 
 class BaseStation(ComponentManager, Agent):
@@ -43,7 +43,7 @@ class BaseStation(ComponentManager, Agent):
         self.users = []
         self.network_switch = None
         self.edge_servers = []
-        self.cloud_server
+        self.cloud_server = None
 
         # Model-specific attributes (defined inside the model's "initialize()" method)
         self.model = None

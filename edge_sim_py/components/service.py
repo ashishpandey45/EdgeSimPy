@@ -11,8 +11,8 @@ from mesa import Agent
 # Python libraries
 import networkx as nx
 
-from EdgeSimPy.edge_sim_py.components.network_switch import NetworkSwitch
-from EdgeSimPy.edge_sim_py.components.topology import Topology
+from edge_sim_py.components.network_switch import NetworkSwitch
+from edge_sim_py.components.topology import Topology
 
 
 class Service(ComponentManager, Agent):
